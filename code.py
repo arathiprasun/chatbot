@@ -1,26 +1,37 @@
+import openai
 import streamlit as st
 
-import pandas as pd
-import re
-import random
-from datetime import datetime
-import time
-import speech_recognition as sr
-import pyttsx3
+st.title("ChatGPT-like clone")
 
-##audio mode add-on
-r = sr.Recognizer()
-def recog_audio():
-    with sr.Microphone() as source:
-        print('Say something')
-        audio = r.listen(source)
-        #voice_data = r.recognize_google(audio)
-        try:
-            voice_data = r.recognize_google(audio)
-            return voice_data
-        except sr.UnknownValueError:
-            print("Google SR engine could not understand audio. Say again please")
-            #recog_audio()
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-        except sr.RequestError as e:
-            print("web request error")
+if "openai_model" not in st.session_state:
+    st.session_state["openai_model"] = "gpt-3.5-turbo"
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.chat_input("What is up?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        for response in openai.ChatCompletion.create(
+            model=st.session_state["openai_model"],
+            messages=[
+                {"role": m["role"], "content": m["content"]}
+                for m in st.session_state.messages
+            ],
+            stream=True,
+        ):
+            full_response += response.choices[0].delta.get("content", "")
+            message_placeholder.markdown(full_response + "▌")
+        message_placeholder.markdown(full_response)
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
