@@ -1,34 +1,34 @@
 import streamlit as st
-import streamlit as st
+import speech_recognition as sr
+from gtts import gTTS
+recognizer = sr.Recognizer()
+microphone = sr.Microphone()
+def main():
+    st.title("Voice Bot")
 
-st.set_page_config(
-   page_title="Cool App",
-   page_icon="🧊",
-   layout="wide",
-   initial_sidebar_state="expanded",
-)
+    # Add a button to start voice input
+    if st.button("Start Recording"):
+        with microphone as source:
+            st.write("Listening...")
+            audio = recognizer.listen(source)
+            st.write("Processing...")
 
-st.title("MyBot")
+            try:
+                # Recognize the audio
+                user_input = recognizer.recognize_google(audio)
+                st.write(f"You said: {user_input}")
 
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+                # Process user input and generate a response
+                response = process_user_input(user_input)
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+                # Generate an audio response using gTTS
+                tts_response = gTTS(response)
+                st.audio(tts_response)
 
-# React to user input
-if prompt := st.chat_input("What is up?"):
-    # Display user message in chat message container
-    st.chat_message("user").markdown(prompt)
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+            except sr.UnknownValueError:
+                st.write("Sorry, I couldn't understand you.")
+            except sr.RequestError as e:
+                st.error(f"Could not request results: {e}")
 
-    response = f"Echo: {prompt}"
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        st.markdown(response)
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
+if __name__ == "__main__":
+    main()
