@@ -1,26 +1,26 @@
 import streamlit as st
 
-st.title("Echo Bot")
+import pandas as pd
+import re
+import random
+from datetime import datetime
+import time
+import speech_recognition as sr
+import pyttsx3
 
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+##audio mode add-on
+r = sr.Recognizer()
+def recog_audio():
+    with sr.Microphone() as source:
+        print('Say something')
+        audio = r.listen(source)
+        #voice_data = r.recognize_google(audio)
+        try:
+            voice_data = r.recognize_google(audio)
+            return voice_data
+        except sr.UnknownValueError:
+            print("Google SR engine could not understand audio. Say again please")
+            #recog_audio()
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# React to user input
-if prompt := st.chat_input("What is up?"):
-    # Display user message in chat message container
-    st.chat_message("user").markdown(prompt)
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
-    response = f"Echo: {prompt}"
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        st.markdown(response)
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        except sr.RequestError as e:
+            print("web request error")
