@@ -1,35 +1,37 @@
-
 import streamlit as st
-import speech_recognition as sr
-from gtts import gTTS
-recognizer = sr.Recognizer()
-microphone = sr.Microphone()
-def main():
-    st.title("Voice Bot")
+from bokeh.models.widgets import Button
+from bokeh.models import CustomJS
+from streamlit_bokeh_events import streamlit_bokeh_events
 
-    # Add a button to start voice input
-    if st.button("Start Recording"):
-        with microphone as source:
-            st.write("Listening...")
-            audio = recognizer.listen(source)
-            st.write("Processing...")
+stt_button = Button(label="Speak", width=100)
 
-            try:
-                # Recognize the audio
-                user_input = recognizer.recognize_google(audio)
-                st.write(f"You said: {user_input}")
+stt_button.js_on_event("button_click", CustomJS(code="""
+    var recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+ 
+    recognition.onresult = function (e) {
+        var value = "";
+        for (var i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+                value += e.results[i][0].transcript;
+            }
+        }
+        if ( value != "") {
+            document.dispatchEvent(new CustomEvent("GET_TEXT", {detail: value}));
+        }
+    }
+    recognition.start();
+    """))
 
-                # Process user input and generate a response
-                response = process_user_input(user_input)
+result = streamlit_bokeh_events(
+    stt_button,
+    events="GET_TEXT",
+    key="listen",
+    refresh_on_update=False,
+    override_height=75,
+    debounce_time=0)
 
-                # Generate an audio response using gTTS
-                tts_response = gTTS(response)
-                st.audio(tts_response)
-
-            except sr.UnknownValueError:
-                st.write("Sorry, I couldn't understand you.")
-            except sr.RequestError as e:
-                st.error(f"Could not request results: {e}")
-
-if __name__ == "__main__":
-    main()
+if result:
+    if "GET_TEXT" in result:
+        st.write(result.get("GET_TEXT"))
