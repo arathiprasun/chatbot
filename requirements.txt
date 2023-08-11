@@ -2,3 +2,4 @@ openai
 streamlit
 SpeechRecognition
  bokeh
+speech_v1p1beta1
