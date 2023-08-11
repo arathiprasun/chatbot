@@ -8,7 +8,7 @@ st.set_page_config(
    initial_sidebar_state="expanded",
 )
 
-st.title("Echo Bot")
+st.title("EchoBot")
 
 # Initialize chat history
 if "messages" not in st.session_state:
