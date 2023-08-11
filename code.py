@@ -1,3 +1,4 @@
+pip install bokeh
 import streamlit as st
 from bokeh.models.widgets import Button
 from bokeh.models import CustomJS
