@@ -1,53 +1,43 @@
 import streamlit as st
-from google.cloud import speech_v1p1beta1 as speech
-from google.cloud import texttospeech
+import random
+import time
 
-# Initialize Google Cloud clients
-speech_client = speech.SpeechClient()
-tts_client = texttospeech.TextToSpeechClient()
+st.title("Simple chat")
 
-# Create Streamlit UI
-st.title("Voicebot")
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# Define voice command input
-user_input = st.text_input("Speak a voice command", "")
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# Process user input and provide response
-if st.button("Process"):
-    # Convert user input to speech recognition audio
-    recognition_audio = speech.RecognitionAudio(content=user_input.encode())
+# Accept user input
+if prompt := st.chat_input("What is up?"):
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    # Display user message in chat message container
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-    # Configure speech recognition request
-    config = speech.RecognitionConfig(
-        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=16000,
-        language_code="en-US",
-    )
-
-    # Request speech-to-text transcription
-    response = speech_client.recognize(config=config, audio=recognition_audio)
-
-    # Extract transcript from the response
-    transcript = response.results[0].alternatives[0].transcript
-
-    # Use the transcript to generate a response
-    if "hello" in transcript:
-        response_text = "Hello there!"
-    else:
-        response_text = "Sorry, I didn't understand that."
-
-    # Convert response text to speech
-    tts_input = texttospeech.SynthesisInput(text=response_text)
-    tts_voice = texttospeech.VoiceSelectionParams(
-        language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-    )
-    tts_audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.LINEAR16
-    )
-    tts_response = tts_client.synthesize_speech(
-        input=tts_input, voice=tts_voice, audio_config=tts_audio_config
-    )
-
-    # Display response text and play the synthesized speech
-    st.text_area("Response", value=response_text)
-    st.audio(tts_response.audio_content, format="audio/wav")
+    # Display assistant response in chat message container
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        assistant_response = random.choice(
+            [
+                "Hello there! How can I assist you today?",
+                "Hi, human! Is there anything I can help you with?",
+                "Do you need help?",
+            ]
+        )
+        # Simulate stream of response with milliseconds delay
+        for chunk in assistant_response.split():
+            full_response += chunk + " "
+            time.sleep(0.05)
+            # Add a blinking cursor to simulate typing
+            message_placeholder.markdown(full_response + "▌")
+        message_placeholder.markdown(full_response)
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
