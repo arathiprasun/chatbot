@@ -1,16 +1,6 @@
 import streamlit as st
 import random
 import time
-import pandas as pd
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
-# Initialize Google Sheets credentials
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name(".streamlit/secrets.json", scope)
-client = gspread.authorize(creds)
-chat_history_sheet = client.open("ChatHistory").sheet1
-user_responses_sheet = client.open("UserResponses").sheet1
 
 st.title("Simple chat")
 
@@ -49,17 +39,5 @@ if prompt := st.chat_input("What is up?"):
             # Add a blinking cursor to simulate typing
             message_placeholder.markdown(full_response + "▌")
         message_placeholder.markdown(full_response)
-
-    # Store user and assistant messages in Google Sheets
-    user_message = prompt
-    assistant_message = full_response
-    chat_history_sheet.append_row([user_message, assistant_message])
-
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-    # Store user response in Google Sheet for user responses
-    user_responses_sheet.append_row([user_message])
-
-# Update chat history and user responses
-st.session_state.messages.append({"role": "user", "content": user_message})
