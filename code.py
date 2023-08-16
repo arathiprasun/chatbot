@@ -1,43 +1,57 @@
+import openai
 import streamlit as st
-import random
-import time
+from streamlit_chat import message
 
-st.title("Simple chat")
+openai.api_key = st.secrets["key"]
 
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# This function uses the OpenAI Completion API to generate a 
+# response based on the given prompt. The temperature parameter controls 
+# the randomness of the generated response. A higher temperature will result 
+# in more random responses, 
+# while a lower temperature will result in more predictable responses.
+def generate_response(prompt):
+    completions = openai.Completion.create (
+        engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        temperature=0.5,
+    )
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    message = completions.choices[0].text
+    return message
 
-# Accept user input
-if prompt := st.chat_input("What is up?"):
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    # Display user message in chat message container
-    with st.chat_message("user"):
-        st.markdown(prompt)
 
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
-        assistant_response = random.choice(
-            [
-                "Hello there! How can I assist you today?",
-                "Hi, human! Is there anything I can help you with?",
-                "Do you need help?",
-            ]
-        )
-        # Simulate stream of response with milliseconds delay
-        for chunk in assistant_response.split():
-            full_response += chunk + " "
-            time.sleep(0.05)
-            # Add a blinking cursor to simulate typing
-            message_placeholder.markdown(full_response + "▌")
-        message_placeholder.markdown(full_response)
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+st.title("😏 ChatBot : openAI GPT-3 + Streamlit")
+
+
+if 'generated' not in st.session_state:
+    st.session_state['generated'] = []
+
+if 'past' not in st.session_state:
+    st.session_state['past'] = []
+
+if 'user_input' not in st.session_state:
+    st.session_state.user_input = ''
+
+
+def get_text():
+    input_text = st.text_input("You: ", placeholder="Type your Msg", key="input", value=st.session_state.user_input)
+    return input_text 
+
+
+user_input = get_text()
+
+if user_input:
+    output = generate_response(user_input)
+    st.session_state.past.append(user_input)
+    st.session_state.generated.append(output)
+    st.session_state.user_input = ''  # clear text input
+
+
+if st.session_state['generated']:
+
+    for i in range(len(st.session_state['generated'])-1, -1, -1):
+        message(st.session_state["generated"][i], key=str(i))
+        message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
